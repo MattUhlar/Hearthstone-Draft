@@ -36,6 +36,18 @@ const CARD_SETS = [
 	"Rastakhan\'s Rumble",
 ];
 
+const CLASS_CARDS_MAP = {
+	'Druid': [],
+	'Hunter': [],
+	'Mage': [],
+	'Paladin': [],
+	'Priest': [],
+	'Rogue': [],
+	'Shaman': [],
+	'Warlock': [],
+	'Warrior': [],
+	'Neutral': []
+};
 
 firebase.initializeApp(config);
 
@@ -73,9 +85,14 @@ fs.readFile('cards.json', 'utf-8', (err, contents) => {
 	contents = JSON.parse(contents.trim());
 
 	let cards = _.flatten(_.map(CARD_SETS, card_set => contents[card_set]));
+	cards.forEach(card => CLASS_CARDS_MAP[card.playerClass].push(buildCardObj(card)));
 
-	cards.forEach(card => {
-		let card_obj = buildCardObj(card);
-		db.collection('cards').doc(card.name).set(card_obj);
-	});
+
+	for (let key in CLASS_CARDS_MAP) {
+		let collection_name = `${key.toLowerCase()}-cards`;
+
+		CLASS_CARDS_MAP[key].forEach(card => {
+			db.collection(collection_name).doc(card.name).set(card);
+		});
+	}
 });
