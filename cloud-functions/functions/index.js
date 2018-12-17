@@ -47,18 +47,57 @@ function getUserOwnedCardNamesForClasses(hearthPwnHtml, classNames) {
 		.value();
 }
 
+function buildQueriesForClassCards(classNames) {
+	return _.map(classNames, className => db.collection(`${className.toLowerCase()}-cards`).get());
+}
+
 // TODO: Validate / handle errors
 exports.getCards = functions.https.onRequest((request, response) => {
+
+	response.set('Access-Control-Allow-Origin', '*');
+
+  if (request.method === 'OPTIONS') {
+    // Send response to OPTIONS requests
+    response.set('Access-Control-Allow-Methods', 'GET');
+    response.set('Access-Control-Allow-Headers', 'Content-Type');
+    response.set('Access-Control-Max-Age', '3600');
+    response.status(204).send('');
+		return;
+  } 
+
 	let username = request.body.username;
 	let classes = request.body.classes;
 
+	if (request.method === 'POST') {
+		console.log('got post request');
+		console.log(request);
+		console.log(request.body);
+		console.log(username);
+		console.log(classes);
+	}
+
 	getUserCollectionFromHearthPwn(username).then(res => {
 		let user_owned_cardnames = getUserOwnedCardNamesForClasses(res.data, classes);
-		let firestore_card_queries = _.map(user_owned_cardnames, cardname => db.collection('cards').doc(cardname).get());
-		return Promise.all(firestore_card_queries);
+		let firestore_card_queries = buildQueriesForClassCards(classes);
+		return Promise.all([user_owned_cardnames, Promise.all(firestore_card_queries)]);
 
-	}).then(snaps => {
-		let user_owned_cards = _.map(snaps, snap => snap.data());
+	}).then(res => {
+		let user_owned_cardnames = res[0];
+		let class_cards_snapshots = res[1];
+
+		let class_cards = _.chain(class_cards_snapshots)
+			.map(snapshot => snapshot.docs)
+			.flatten()
+			.map(doc => doc.data())
+			.value();
+
+		let card_name_to_card_map = _.reduce(class_cards, (memo, card) => {
+			memo[card.name] = card; 
+			return memo
+		}, {});
+
+		let user_owned_cards = _.map(user_owned_cardnames, cardname => card_name_to_card_map[cardname]);
+
 		response.status(200).send(JSON.stringify(user_owned_cards));
 		return;
 
@@ -66,4 +105,5 @@ exports.getCards = functions.https.onRequest((request, response) => {
 		console.log(err)
 		response.status(500).send();
 	});
+
 });
