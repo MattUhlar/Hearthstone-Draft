@@ -16,7 +16,7 @@ const config = {
 	messagingSenderId: "90888399507"
 };
 
-let CARD_SETS = [
+const CARD_SETS = [
 	"Basic",
 	"Classic",
 	"Hall of Fame",
@@ -61,12 +61,14 @@ function buildCardObj(card) {
 	if (card.faction) {
 		obj.faction = card.faction
 	}
+
 	if (card.mechanics) {
 		obj.mechanics = card.mechanics;
 	}
 
 	return obj;
 }
+
 fs.readFile('cards.json', 'utf-8', (err, contents) => {
 	contents = JSON.parse(contents.trim());
 
