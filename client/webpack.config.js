@@ -8,6 +8,10 @@ module.exports = {
   },
   module: {
     rules: [
+			{ 
+				test: /\.hbs$/, 
+				loader: "handlebars-loader" 
+			},
       {
         test: /\.css$/,
         use: [
@@ -24,4 +28,3 @@ module.exports = {
     ]
   }
 }
-
