@@ -27,7 +27,7 @@ const settings = {timestampsInSnapshots: true};
 db.settings(settings);
 
 function getUserCollectionFromHearthPwn(username) {
-  return axios.get(HEARTHPWN_BASE_URL + username + '/collection')
+	return axios.get(HEARTHPWN_BASE_URL + username + '/collection')
 }
 
 function getUserOwnedCardNamesForClass(hearthPwnHtml, className) {
@@ -53,9 +53,9 @@ exports.getCards = functions.https.onRequest((request, response) => {
 	let classes = request.body.classes;
 
 	getUserCollectionFromHearthPwn(username).then(res => {
-			let user_owned_cardnames = getUserOwnedCardNamesForClasses(res.data, classes);
-			let firestore_card_queries = _.map(user_owned_cardnames, cardname => db.collection('cards').doc(cardname).get());
-			return Promise.all(firestore_card_queries);
+		let user_owned_cardnames = getUserOwnedCardNamesForClasses(res.data, classes);
+		let firestore_card_queries = _.map(user_owned_cardnames, cardname => db.collection('cards').doc(cardname).get());
+		return Promise.all(firestore_card_queries);
 
 	}).then(snaps => {
 		let user_owned_cards = _.map(snaps, snap => snap.data());
