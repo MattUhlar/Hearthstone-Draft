@@ -31,8 +31,8 @@ function getUserCollectionFromHearthPwn(username) {
 }
 
 function getUserOwnedCardNamesForClass(hearthPwnHtml, className) {
-	let collection_id = '#tab-' + className.toLowerCase();
-	let $ = cheerio.load(hearthPwnHtml);
+	const collection_id = '#tab-' + className.toLowerCase();
+	const $ = cheerio.load(hearthPwnHtml);
 
 	return $(collection_id).find($('.owns-card')).map(function(idx, el) {
 		return $(this).data()['cardName'];
@@ -47,8 +47,10 @@ function getUserOwnedCardNamesForClasses(hearthPwnHtml, classNames) {
 		.value();
 }
 
-function buildQueriesForClassCards(classNames) {
-	return _.map(classNames, className => db.collection(`${className.toLowerCase()}-cards`).get());
+function getClassCardsFromDB(classNames) {
+	return Promise.all(
+    _.map(classNames, className => db.collection(`${className.toLowerCase()}-cards`).get())
+  );
 }
 
 // TODO: Validate / handle errors
@@ -65,8 +67,8 @@ exports.getCards = functions.https.onRequest((request, response) => {
 		return;
   } 
 
-	let username = request.body.username;
-	let classes = request.body.classes;
+	const username = request.body.username;
+	const classes = request.body.classes;
 
 	if (request.method === 'POST') {
 		console.log('got post request');
@@ -76,34 +78,26 @@ exports.getCards = functions.https.onRequest((request, response) => {
 		console.log(classes);
 	}
 
-	getUserCollectionFromHearthPwn(username).then(res => {
-		let user_owned_cardnames = getUserOwnedCardNamesForClasses(res.data, classes);
-		let firestore_card_queries = buildQueriesForClassCards(classes);
-		return Promise.all([user_owned_cardnames, Promise.all(firestore_card_queries)]);
+  Promise.all([
+    getUserCollectionFromHearthPwn(username),
+    getClassCardsFromDB(classes)
+  ]).then(([user_collection, class_cards_snapshots]) => {
 
-	}).then(res => {
-		let user_owned_cardnames = res[0];
-		let class_cards_snapshots = res[1];
-
-		let class_cards = _.chain(class_cards_snapshots)
+	  const user_owned_cardnames = getUserOwnedCardNamesForClasses(user_collection.data, classes);
+		const class_cards = _.chain(class_cards_snapshots)
 			.map(snapshot => snapshot.docs)
 			.flatten()
 			.map(doc => doc.data())
 			.value();
 
-		let card_name_to_card_map = _.reduce(class_cards, (memo, card) => {
-			memo[card.name] = card; 
-			return memo
-		}, {});
-
-		let user_owned_cards = _.map(user_owned_cardnames, cardname => card_name_to_card_map[cardname]);
+		const card_name_to_card_map = _.reduce(class_cards, (memo, card) => _.extend(memo, {[card.name]: card}), {});
+		const user_owned_cards = _.map(user_owned_cardnames, cardname => card_name_to_card_map[cardname]);
 
 		response.status(200).send(JSON.stringify(user_owned_cards));
 		return;
-
-	}).catch(err => {
+  })
+  .catch(err => {
 		console.log(err)
 		response.status(500).send();
-	});
-
+  });
 });
