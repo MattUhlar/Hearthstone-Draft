@@ -1,40 +1,49 @@
 'use strict';
 
-import {LobbyPresenter} from './presenters/lobby';
-import {GamePresenter} from './presenters/game';
 import 'bootstrap';
+import 'bootstrap/dist/css/bootstrap.css';
 
-const _  = require('underscore');
+import {LobbyPresenter} from './presenters/lobby-presenter';
+import {GamePresenter} from './presenters/game-presenter';
+import {LoginPresenter} from './presenters/login-presenter';
+import {SignUpPresenter} from './presenters/signup-presenter';
+
+import {OpenGames} from './collections/open-games';
+
 const firebase = require("firebase/app");
-const firestore = require("firebase/firestore");
-
-let lobbyPresenter = new LobbyPresenter();
-let gamePresenter = new GamePresenter();
+const firestore = require("firebase/database");
+const $ = require('jquery');
 
 // Initialize firebase
-var config = {
-	apiKey: "AIzaSyATRgPsNYrPO6UceY0gTLtRWDoWJgmtsbY",
-	authDomain: "hearthstone-draft.firebaseapp.com",
-	databaseURL: "https://hearthstone-draft.firebaseio.com",
-	projectId: "hearthstone-draft",
-	storageBucket: "hearthstone-draft.appspot.com",
-	messagingSenderId: "90888399507"
+const config = {
+  apiKey: "AIzaSyATRgPsNYrPO6UceY0gTLtRWDoWJgmtsbY",
+  authDomain: "hearthstone-draft.firebaseapp.com",
+  databaseURL: "https://hearthstone-draft.firebaseio.com",
+  projectId: "hearthstone-draft",
+  storageBucket: "hearthstone-draft.appspot.com",
+  messagingSenderId: "90888399507"
 };
-
 
 firebase.initializeApp(config);
 
-const db = firebase.firestore();
-const settings = {timestampsInSnapshots: true};
-db.settings(settings);
+const db = firebase.database();
+const openGamesRef = db.ref('open-games');
 
-db.collection("test").get().then((querySnapshot) => {
-	querySnapshot.forEach(doc => {
-		console.log(doc.data());
-		lobbyPresenter.showMessage(doc.data().message);
-	});
+const loginPresenter = new LoginPresenter();
+loginPresenter.render(); 
+
+$('#confirm-btn').on('click', e => {
+
+  const openGames = new OpenGames(null, {
+    ref: openGamesRef
+  });
+
+  const lobbyPresenter = new LobbyPresenter({
+    collection: openGames,
+    db: db,
+    username: $('#username-input').val()
+  });
+
+  loginPresenter.remove();
+  lobbyPresenter.render();
 });
-
-
-lobbyPresenter.render();
-gamePresenter.render();
