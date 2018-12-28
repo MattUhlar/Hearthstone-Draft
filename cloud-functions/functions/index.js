@@ -35,7 +35,10 @@ function getUserOwnedCardNamesForClass(hearthPwnHtml, className) {
 	const $ = cheerio.load(hearthPwnHtml);
 
 	return $(collection_id).find($('.owns-card')).map(function(idx, el) {
-		return $(this).data()['cardName'];
+    const card_el = $(this);
+		const card_name = card_el.data('cardName');
+    const card_count = card_el.find('.inline-card-count').data('cardCount');
+    return {[card_name]: card_count};
 	}).get();
 }
 
@@ -53,7 +56,6 @@ function getClassCardsFromDB(classNames) {
   );
 }
 
-// TODO: Validate / handle errors
 exports.getCards = functions.https.onRequest((request, response) => {
 
 	response.set('Access-Control-Allow-Origin', '*');

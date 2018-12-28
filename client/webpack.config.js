@@ -8,17 +8,17 @@ module.exports = {
   },
   module: {
     rules: [
+      {
+        test: /\.css$/,
+        use: [
+          { loader: "style-loader" },
+          { loader: "css-loader" }
+        ]
+      },
 			{ 
 				test: /\.hbs$/, 
 				loader: "handlebars-loader" 
 			},
-      {
-        test: /\.css$/,
-        use: [
-          'style-loader',
-          'css-loader'
-        ]
-      },
       {
        test: /\.(png|svg|jpg|gif)$/,
        use: [

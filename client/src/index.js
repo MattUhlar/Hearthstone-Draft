@@ -8,7 +8,7 @@ import {GamePresenter} from './presenters/game-presenter';
 import {LoginPresenter} from './presenters/login-presenter';
 import {SignUpPresenter} from './presenters/signup-presenter';
 
-import {OpenGames} from './collections/open-games';
+import {OpenGames} from './models/open-games';
 
 const firebase = require("firebase/app");
 const firestore = require("firebase/database");

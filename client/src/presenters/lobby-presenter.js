@@ -1,7 +1,7 @@
 import Backbone from 'backbone';
 import {OpenGameView} from './open-game-presenter';
 import {GamePresenter} from './game-presenter';
-import {Game} from '../collections/open-games';
+import {Game} from '../models/games';
 
 const _ = require('underscore');
 const template = require('../partials/lobby.hbs');
